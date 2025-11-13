@@ -1,0 +1,7 @@
+{
+  "name": "MealSmart",
+  "description": "A health, nutrition, and fitness tracker that uses AI to estimate calories and macronutrients from food photos or descriptions, inspired by MyFitnessPal.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
