@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { DailyLog, DailyTotals, DailyGoals, MealCategory } from '../types';
 import CircularProgress from './CircularProgress';
@@ -13,12 +12,12 @@ interface DashboardProps {
 
 const MacroDisplay: React.FC<{ label: string; value: number; goal: number; color: string }> = ({ label, value, goal, color }) => (
   <div className="flex-1 text-center">
-    <p className="text-sm text-slate-500">{label}</p>
-    <p className="text-lg font-semibold">{Math.round(value)}g</p>
-    <div className="w-full bg-slate-200 rounded-full h-2 mt-1">
+    <p className="text-sm text-slate-500 dark:text-slate-400">{label}</p>
+    <p className="text-lg font-semibold text-slate-800 dark:text-off-white">{Math.round(value)}g</p>
+    <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2 mt-1">
       <div className={`${color} h-2 rounded-full`} style={{ width: `${Math.min((value / goal) * 100, 100)}%` }}></div>
     </div>
-    <p className="text-xs text-slate-400 mt-1">Goal: {goal}g</p>
+    <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">Goal: {goal}g</p>
   </div>
 );
 
@@ -26,18 +25,18 @@ const Dashboard: React.FC<DashboardProps> = ({ dailyLog, totals, goals, onRemove
   const caloriesRemaining = goals.calories - totals.calories;
   
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 animate-fade-in">
       {/* Summary Section */}
-      <div className="bg-white p-6 rounded-xl shadow-md flex flex-col md:flex-row items-center space-y-6 md:space-y-0 md:space-x-8">
+      <div className="bg-white dark:bg-slate-800/50 p-6 rounded-xl shadow-md flex flex-col md:flex-row items-center space-y-6 md:space-y-0 md:space-x-8">
         <div className="relative">
           <CircularProgress percentage={(totals.calories / goals.calories) * 100} size={140} strokeWidth={12} />
           <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-            <span className="text-2xl font-bold text-green-600">{Math.round(totals.calories)}</span>
-            <span className="text-sm text-slate-500">kcal eaten</span>
+            <span className="text-2xl font-bold text-dark-cyan">{Math.round(totals.calories)}</span>
+            <span className="text-sm text-slate-500 dark:text-slate-400">kcal eaten</span>
           </div>
         </div>
         <div className="w-full flex-1">
-          <h2 className="text-2xl font-bold text-center md:text-left">
+          <h2 className="text-2xl font-bold text-center text-slate-800 dark:text-off-white md:text-left">
             {caloriesRemaining >= 0 ? `${Math.round(caloriesRemaining)} kcal remaining` : `${Math.abs(Math.round(caloriesRemaining))} kcal over`}
           </h2>
           <div className="mt-4 flex justify-between space-x-4">

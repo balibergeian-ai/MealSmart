@@ -14,6 +14,7 @@ const defaultProfile: UserProfile = {
     carbs: 250,
     fat: 65,
   },
+  avatarUrl: undefined,
 };
 
 const USER_PROFILE_KEY = 'userProfile';

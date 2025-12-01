@@ -1,6 +1,7 @@
-
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { UserProfile } from '../types';
+import Avatar from './Avatar';
+import { PencilIcon } from './icons/PencilIcon';
 
 interface ProfileSetupWizardProps {
     onComplete: (profile: UserProfile) => void;
@@ -18,6 +19,7 @@ const initialProfile: UserProfile = {
         carbs: 250,
         fat: 65,
     },
+    avatarUrl: undefined,
 };
 
 type ActivityLevel = 'sedentary' | 'light' | 'moderate' | 'active' | 'veryActive';
@@ -28,6 +30,7 @@ const ProfileSetupWizard: React.FC<ProfileSetupWizardProps> = ({ onComplete }) =
     const [formData, setFormData] = useState(initialProfile);
     const [activityLevel, setActivityLevel] = useState<ActivityLevel>('light');
     const [goal, setGoal] = useState<Goal>('maintain');
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const calculatedGoals = useMemo(() => {
         const { age, weight, height, gender } = formData;
@@ -78,6 +81,17 @@ const ProfileSetupWizard: React.FC<ProfileSetupWizardProps> = ({ onComplete }) =
             [name]: (name === 'name' || name === 'gender') ? value : (value === '' ? '' : parseFloat(value))
         }));
     };
+    
+    const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            const file = e.target.files[0];
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setFormData(prev => ({ ...prev, avatarUrl: reader.result as string }));
+            };
+            reader.readAsDataURL(file);
+        }
+    };
 
     const handleFinish = () => {
         const finalProfile = {
@@ -94,24 +108,46 @@ const ProfileSetupWizard: React.FC<ProfileSetupWizardProps> = ({ onComplete }) =
     const isStep2Valid = formData.age !== '' && formData.weight !== '' && formData.height !== '' && Number(formData.age) > 0 && Number(formData.weight) > 0 && Number(formData.height) > 0;
 
     return (
-        <div className="min-h-screen bg-slate-100 flex flex-col items-center justify-center p-4">
-            <div className="w-full max-w-lg bg-white rounded-2xl shadow-xl p-8 space-y-6">
-                <h1 className="text-3xl font-bold text-center text-green-600">Welcome to MealSmart</h1>
+        <div className="min-h-screen bg-slate-100 dark:bg-very-dark-blue flex flex-col items-center justify-center p-4 text-slate-800 dark:text-off-white">
+            <div className="w-full max-w-lg bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-8 space-y-6">
+                <h1 className="text-3xl font-bold text-center text-dark-cyan">Welcome to MealSmart</h1>
                 
                 {/* Progress Bar */}
-                <div className="w-full bg-slate-200 rounded-full h-2.5">
-                    <div className="bg-green-500 h-2.5 rounded-full" style={{ width: `${(step / 4) * 100}%`, transition: 'width 0.3s ease-in-out' }}></div>
+                <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2.5">
+                    <div className="bg-dark-cyan h-2.5 rounded-full" style={{ width: `${(step / 4) * 100}%`, transition: 'width 0.3s ease-in-out' }}></div>
                 </div>
 
-                {/* Step 1: Name */}
+                {/* Step 1: Name & Avatar */}
                 {step === 1 && (
-                    <div className="space-y-4 animate-fade-in">
-                        <h2 className="text-xl font-semibold text-center">Let's start with your name</h2>
-                        <div>
-                            <label htmlFor="name" className="block text-sm font-medium text-slate-700">Name</label>
-                            <input type="text" name="name" id="name" value={formData.name} onChange={handleChange} className="mt-1 w-full border-slate-300 rounded-md p-3 focus:ring-green-500 focus:border-green-500 transition" placeholder="e.g., Alex Doe" />
+                    <div className="space-y-6 animate-fade-in">
+                        <h2 className="text-xl font-semibold text-center">Let's get you set up</h2>
+                        
+                        <div className="flex justify-center">
+                            <div className="relative">
+                                <Avatar user={{ name: formData.name || '?', id: 'setupUser', avatarUrl: formData.avatarUrl }} size="lg" />
+                                <button
+                                    type="button"
+                                    onClick={() => fileInputRef.current?.click()}
+                                    className="absolute -bottom-2 -right-2 bg-dark-cyan text-white rounded-full p-2 shadow-md hover:bg-light-cyan transition"
+                                    aria-label="Upload photo"
+                                >
+                                    <PencilIcon className="w-4 h-4" />
+                                </button>
+                                <input
+                                    type="file"
+                                    ref={fileInputRef}
+                                    className="hidden"
+                                    accept="image/*"
+                                    onChange={handleAvatarChange}
+                                />
+                            </div>
                         </div>
-                        <button onClick={handleNext} disabled={!isStep1Valid} className="w-full bg-green-600 text-white font-bold py-3 px-4 rounded-md hover:bg-green-700 transition disabled:bg-slate-400">Next</button>
+
+                        <div>
+                            <label htmlFor="name" className="block text-sm font-medium text-slate-600 dark:text-slate-300">Name</label>
+                            <input type="text" name="name" id="name" value={formData.name} onChange={handleChange} className="mt-1 w-full bg-slate-100 dark:bg-slate-900 border-slate-300 dark:border-slate-600 rounded-md p-3 focus:ring-dark-cyan focus:border-dark-cyan transition placeholder-slate-400 dark:placeholder-slate-500" placeholder="e.g., Alex Doe" />
+                        </div>
+                        <button onClick={handleNext} disabled={!isStep1Valid} className="w-full bg-dark-cyan text-white font-bold py-3 px-4 rounded-md hover:bg-light-cyan transition disabled:bg-slate-400 dark:disabled:bg-slate-600">Next</button>
                     </div>
                 )}
 
@@ -121,29 +157,29 @@ const ProfileSetupWizard: React.FC<ProfileSetupWizardProps> = ({ onComplete }) =
                         <h2 className="text-xl font-semibold text-center">Tell us about yourself</h2>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-sm font-medium text-slate-700">Age</label>
-                                <input type="number" name="age" value={formData.age} onChange={handleChange} className="mt-1 w-full border-slate-300 rounded-md p-3 focus:ring-green-500 focus:border-green-500" />
+                                <label className="block text-sm font-medium text-slate-600 dark:text-slate-300">Age</label>
+                                <input type="number" name="age" value={formData.age} onChange={handleChange} className="mt-1 w-full bg-slate-100 dark:bg-slate-900 border-slate-300 dark:border-slate-600 rounded-md p-3 focus:ring-dark-cyan focus:border-dark-cyan" />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-slate-700">Gender</label>
-                                <select name="gender" value={formData.gender} onChange={handleChange} className="mt-1 w-full border-slate-300 rounded-md p-3 focus:ring-green-500 focus:border-green-500">
+                                <label className="block text-sm font-medium text-slate-600 dark:text-slate-300">Gender</label>
+                                <select name="gender" value={formData.gender} onChange={handleChange} className="mt-1 w-full bg-slate-100 dark:bg-slate-900 border-slate-300 dark:border-slate-600 rounded-md p-3 focus:ring-dark-cyan focus:border-dark-cyan">
                                     <option value="female">Female</option>
                                     <option value="male">Male</option>
                                     <option value="other">Other</option>
                                 </select>
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-slate-700">Weight (kg)</label>
-                                <input type="number" name="weight" value={formData.weight} onChange={handleChange} className="mt-1 w-full border-slate-300 rounded-md p-3 focus:ring-green-500 focus:border-green-500" />
+                                <label className="block text-sm font-medium text-slate-600 dark:text-slate-300">Weight (kg)</label>
+                                <input type="number" name="weight" value={formData.weight} onChange={handleChange} className="mt-1 w-full bg-slate-100 dark:bg-slate-900 border-slate-300 dark:border-slate-600 rounded-md p-3 focus:ring-dark-cyan focus:border-dark-cyan" />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-slate-700">Height (cm)</label>
-                                <input type="number" name="height" value={formData.height} onChange={handleChange} className="mt-1 w-full border-slate-300 rounded-md p-3 focus:ring-green-500 focus:border-green-500" />
+                                <label className="block text-sm font-medium text-slate-600 dark:text-slate-300">Height (cm)</label>
+                                <input type="number" name="height" value={formData.height} onChange={handleChange} className="mt-1 w-full bg-slate-100 dark:bg-slate-900 border-slate-300 dark:border-slate-600 rounded-md p-3 focus:ring-dark-cyan focus:border-dark-cyan" />
                             </div>
                         </div>
                         <div className="flex gap-4">
-                            <button onClick={handleBack} className="w-full bg-slate-200 text-slate-800 font-bold py-3 px-4 rounded-md hover:bg-slate-300 transition">Back</button>
-                            <button onClick={handleNext} disabled={!isStep2Valid} className="w-full bg-green-600 text-white font-bold py-3 px-4 rounded-md hover:bg-green-700 transition disabled:bg-slate-400">Next</button>
+                            <button onClick={handleBack} className="w-full bg-slate-500 dark:bg-slate-600 text-white dark:text-off-white font-bold py-3 px-4 rounded-md hover:bg-slate-600 dark:hover:bg-slate-500 transition">Back</button>
+                            <button onClick={handleNext} disabled={!isStep2Valid} className="w-full bg-dark-cyan text-white font-bold py-3 px-4 rounded-md hover:bg-light-cyan transition disabled:bg-slate-400 dark:disabled:bg-slate-600">Next</button>
                         </div>
                     </div>
                 )}
@@ -153,8 +189,8 @@ const ProfileSetupWizard: React.FC<ProfileSetupWizardProps> = ({ onComplete }) =
                     <div className="space-y-6 animate-fade-in">
                         <h2 className="text-xl font-semibold text-center">What's your primary goal?</h2>
                         <div>
-                             <label className="block text-sm font-medium text-slate-700 mb-2">Activity Level</label>
-                             <select value={activityLevel} onChange={e => setActivityLevel(e.target.value as ActivityLevel)} className="w-full border-slate-300 rounded-md p-3 focus:ring-green-500 focus:border-green-500">
+                             <label className="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-2">Activity Level</label>
+                             <select value={activityLevel} onChange={e => setActivityLevel(e.target.value as ActivityLevel)} className="w-full bg-slate-100 dark:bg-slate-900 border-slate-300 dark:border-slate-600 rounded-md p-3 focus:ring-dark-cyan focus:border-dark-cyan">
                                  <option value="sedentary">Sedentary (little or no exercise)</option>
                                  <option value="light">Lightly active (light exercise/sports 1-3 days/week)</option>
                                  <option value="moderate">Moderately active (moderate exercise/sports 3-5 days/week)</option>
@@ -163,26 +199,26 @@ const ProfileSetupWizard: React.FC<ProfileSetupWizardProps> = ({ onComplete }) =
                              </select>
                         </div>
                          <div>
-                             <label className="block text-sm font-medium text-slate-700 mb-2">Goal</label>
+                             <label className="block text-sm font-medium text-slate-600 dark:text-slate-300 mb-2">Goal</label>
                              <div className="flex space-x-2">
                                 {(['lose', 'maintain', 'gain'] as Goal[]).map(g => (
-                                    <button key={g} onClick={() => setGoal(g)} className={`flex-1 p-2 rounded-md capitalize transition ${goal === g ? 'bg-green-600 text-white' : 'bg-slate-200 hover:bg-slate-300'}`}>{g} weight</button>
+                                    <button key={g} onClick={() => setGoal(g)} className={`flex-1 p-2 rounded-md capitalize transition ${goal === g ? 'bg-dark-cyan text-white' : 'bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-800 dark:text-off-white'}`}>{g} weight</button>
                                 ))}
                              </div>
                         </div>
-                         <div className="bg-slate-100 p-4 rounded-md text-center space-y-2">
+                         <div className="bg-slate-100 dark:bg-slate-900 p-4 rounded-md text-center space-y-2">
                             <h3 className="font-semibold">Your Suggested Daily Goals:</h3>
                             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                                <div><span className="font-bold text-green-600">{calculatedGoals.calories}</span><p className="text-sm text-slate-500">kcal</p></div>
-                                <div><span className="font-bold">{calculatedGoals.protein}g</span><p className="text-sm text-slate-500">Protein</p></div>
-                                <div><span className="font-bold">{calculatedGoals.carbs}g</span><p className="text-sm text-slate-500">Carbs</p></div>
-                                <div><span className="font-bold">{calculatedGoals.fat}g</span><p className="text-sm text-slate-500">Fat</p></div>
+                                <div><span className="font-bold text-dark-cyan">{calculatedGoals.calories}</span><p className="text-sm text-slate-500 dark:text-slate-400">kcal</p></div>
+                                <div><span className="font-bold text-slate-800 dark:text-off-white">{calculatedGoals.protein}g</span><p className="text-sm text-slate-500 dark:text-slate-400">Protein</p></div>
+                                <div><span className="font-bold text-slate-800 dark:text-off-white">{calculatedGoals.carbs}g</span><p className="text-sm text-slate-500 dark:text-slate-400">Carbs</p></div>
+                                <div><span className="font-bold text-slate-800 dark:text-off-white">{calculatedGoals.fat}g</span><p className="text-sm text-slate-500 dark:text-slate-400">Fat</p></div>
                             </div>
-                            <p className="text-xs text-slate-400 pt-2">You can adjust these later in your profile.</p>
+                            <p className="text-xs text-slate-400 dark:text-slate-500 pt-2">You can adjust these later in your profile.</p>
                          </div>
                         <div className="flex gap-4">
-                            <button onClick={handleBack} className="w-full bg-slate-200 text-slate-800 font-bold py-3 px-4 rounded-md hover:bg-slate-300 transition">Back</button>
-                            <button onClick={handleNext} className="w-full bg-green-600 text-white font-bold py-3 px-4 rounded-md hover:bg-green-700 transition">Next</button>
+                             <button onClick={handleBack} className="w-full bg-slate-500 dark:bg-slate-600 text-white dark:text-off-white font-bold py-3 px-4 rounded-md hover:bg-slate-600 dark:hover:bg-slate-500 transition">Back</button>
+                            <button onClick={handleNext} className="w-full bg-dark-cyan text-white font-bold py-3 px-4 rounded-md hover:bg-light-cyan transition">Next</button>
                         </div>
                     </div>
                 )}
@@ -191,12 +227,12 @@ const ProfileSetupWizard: React.FC<ProfileSetupWizardProps> = ({ onComplete }) =
                 {step === 4 && (
                     <div className="space-y-6 animate-fade-in">
                         <h2 className="text-xl font-semibold text-center">Ready to go?</h2>
-                        <div className="bg-slate-50 p-4 rounded-lg space-y-2">
+                        <div className="bg-slate-100 dark:bg-slate-900 p-4 rounded-lg space-y-2 text-slate-600 dark:text-slate-300">
                             <p><strong>Name:</strong> {formData.name}</p>
                             <p><strong>Age:</strong> {formData.age}</p>
                             <p><strong>Weight:</strong> {formData.weight} kg</p>
                             <p><strong>Height:</strong> {formData.height} cm</p>
-                            <p className="font-semibold pt-2">Daily Goals:</p>
+                            <p className="font-semibold pt-2 text-slate-800 dark:text-off-white">Daily Goals:</p>
                             <p className="text-sm">
                                 {calculatedGoals.calories} kcal, 
                                 {calculatedGoals.protein}g Protein, 
@@ -205,8 +241,8 @@ const ProfileSetupWizard: React.FC<ProfileSetupWizardProps> = ({ onComplete }) =
                             </p>
                         </div>
                         <div className="flex gap-4">
-                            <button onClick={handleBack} className="w-full bg-slate-200 text-slate-800 font-bold py-3 px-4 rounded-md hover:bg-slate-300 transition">Back</button>
-                            <button onClick={handleFinish} className="w-full bg-green-600 text-white font-bold py-3 px-4 rounded-md hover:bg-green-700 transition">Finish Setup & Start Tracking!</button>
+                             <button onClick={handleBack} className="w-full bg-slate-500 dark:bg-slate-600 text-white dark:text-off-white font-bold py-3 px-4 rounded-md hover:bg-slate-600 dark:hover:bg-slate-500 transition">Back</button>
+                            <button onClick={handleFinish} className="w-full bg-dark-cyan text-white font-bold py-3 px-4 rounded-md hover:bg-light-cyan transition">Finish Setup & Start Tracking!</button>
                         </div>
                     </div>
                 )}

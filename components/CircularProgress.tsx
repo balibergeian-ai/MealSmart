@@ -1,4 +1,3 @@
-
 import React from 'react';
 
 interface CircularProgressProps {
@@ -15,7 +14,7 @@ const CircularProgress: React.FC<CircularProgressProps> = ({ percentage, size, s
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
       <circle
-        className="text-slate-200"
+        className="text-slate-200 dark:text-slate-700"
         strokeWidth={strokeWidth}
         stroke="currentColor"
         fill="transparent"
@@ -24,7 +23,7 @@ const CircularProgress: React.FC<CircularProgressProps> = ({ percentage, size, s
         cy={size / 2}
       />
       <circle
-        className="text-green-500"
+        className="text-dark-cyan"
         strokeWidth={strokeWidth}
         strokeDasharray={circumference}
         strokeDashoffset={offset}

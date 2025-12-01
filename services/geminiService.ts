@@ -1,6 +1,6 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
-import { AnalyzedFood } from '../types';
+import { AnalyzedFood, UserProfile, DailyTotals } from '../types';
 
 const fileToBase64 = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
@@ -45,7 +45,7 @@ const responseSchema = {
     required: ["name", "calories", "protein", "carbohydrates", "fat"],
 };
 
-const getAnalysis = async (promptParts: any[]): Promise<AnalyzedFood | null> => {
+const getAnalysis = async (promptParts: any[]): Promise<{ data: AnalyzedFood | null; error: string | null; }> => {
     try {
         const response = await ai.models.generateContent({
             model,
@@ -59,30 +59,82 @@ const getAnalysis = async (promptParts: any[]): Promise<AnalyzedFood | null> => 
 
         const jsonText = response.text.trim();
         const data = JSON.parse(jsonText) as AnalyzedFood;
-        return data;
+        return { data, error: null };
 
     } catch (error) {
         console.error("Error analyzing food with Gemini API:", error);
-        return null;
+        if (error instanceof Error) {
+            if (error.message.includes('SAFETY')) {
+                 return { data: null, error: "The request was blocked due to safety settings. Please try a different input." };
+            }
+            return { data: null, error: "The AI model could not process the request. Please try again." };
+        }
+        return { data: null, error: "An unknown error occurred during analysis." };
     }
 };
 
-export const analyzeFoodFromText = async (description: string): Promise<AnalyzedFood | null> => {
+export const analyzeFoodFromText = async (description: string): Promise<{ data: AnalyzedFood | null; error: string | null; }> => {
     const prompt = `Analyze the following meal description and provide its nutritional information. Description: ${description}`;
     return getAnalysis([{ text: prompt }]);
 };
 
-export const analyzeFoodFromImage = async (imageFile: File): Promise<AnalyzedFood | null> => {
-    const base64Image = await fileToBase64(imageFile);
-    const imagePart = {
-        inlineData: {
-            mimeType: imageFile.type,
-            data: base64Image,
-        },
-    };
-    const textPart = {
-        text: "Analyze the food in this image and provide its estimated nutritional information.",
-    };
+export const analyzeFoodFromImage = async (imageFile: File): Promise<{ data: AnalyzedFood | null; error: string | null; }> => {
+    try {
+        const base64Image = await fileToBase64(imageFile);
+        const imagePart = {
+            inlineData: {
+                mimeType: imageFile.type,
+                data: base64Image,
+            },
+        };
+        const textPart = {
+            text: "Analyze the food in this image and provide its estimated nutritional information.",
+        };
 
-    return getAnalysis([imagePart, textPart]);
+        return getAnalysis([imagePart, textPart]);
+    } catch (error) {
+        console.error("Error processing image file:", error);
+        return { data: null, error: "Could not process the image file. Please try a different image." };
+    }
+};
+
+export const getHealthTip = async (profile: UserProfile, totals: DailyTotals): Promise<{ data: string | null; error: string | null; }> => {
+    const prompt = `
+        You are a friendly and encouraging nutrition coach. Based on the following user profile and their food intake for today, provide one short, actionable, and positive tip.
+        The user wants to feel motivated. Do not be harsh or critical. Keep the tip under 60 words.
+
+        User Profile:
+        - Gender: ${profile.gender}
+        - Age: ${profile.age}
+        - Calorie Goal: ${profile.goals.calories} kcal
+        - Protein Goal: ${profile.goals.protein} g
+
+        Today's Intake:
+        - Calories: ${Math.round(totals.calories)} kcal
+        - Protein: ${Math.round(totals.protein)} g
+        - Carbs: ${Math.round(totals.carbs)} g
+        - Fat: ${Math.round(totals.fat)} g
+
+        Your tip:
+    `;
+
+    try {
+        const response = await ai.models.generateContent({
+            model,
+            contents: prompt,
+            config: {
+                temperature: 0.7,
+            },
+        });
+        return { data: response.text, error: null };
+    } catch (error) {
+        console.error("Error getting health tip from Gemini API:", error);
+        if (error instanceof Error) {
+            if (error.message.includes('SAFETY')) {
+                 return { data: null, error: "The request for a tip was blocked due to safety settings." };
+            }
+            return { data: null, error: "The AI model could not generate a tip. Please try again." };
+        }
+        return { data: null, error: "An unknown error occurred while getting a tip." };
+    }
 };
